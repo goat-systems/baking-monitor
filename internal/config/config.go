@@ -15,10 +15,10 @@ type Config struct {
 
 // Twilio contains twilio API information for automatic notifications
 type Twilio struct {
-	AccountSID string   `env:"BAKING_MONITOR_ACCOUNT_SID" validate:"required"`
-	AuthToken  string   `env:"BAKING_MONITOR_AUTH_TOKEN" validate:"required"`
-	From       string   `env:"BAKING_MONITOR_FROM" validate:"required"`
-	To         []string `env:"BAKING_MONITOR_TO" envSeparator:"," validate:"required"`
+	AccountSID string   `env:"BAKING_MONITOR_TWILIO_ACCOUNT_SID" validate:"required"`
+	AuthToken  string   `env:"BAKING_MONITOR_TWILIO_AUTH_TOKEN" validate:"required"`
+	From       string   `env:"BAKING_MONITOR_TWILIO_FROM" validate:"required"`
+	To         []string `env:"BAKING_MONITOR_TWILIO_TO" envSeparator:"," validate:"required"`
 }
 
 // New loads enviroment variables into a Config struct

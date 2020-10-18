@@ -27,22 +27,22 @@ spec:
             value: "tz1SUgyRB8T5jXgXAwS33pgRHAKrafyg87Yc"
           - name: BAKING_MONITOR_TEZOS_API
             value: "https://mainnet-tezos.giganode.io"
-          - name: BAKING_MONITOR_ACCOUNT_SID
+          - name: BAKING_MONITOR_TWILIO_ACCOUNT_SID
             valueFrom:
               secretKeyRef:
                 name: secret-config
                 key: twilio-account-sid
-          - name: BAKING_MONITOR_AUTH_TOKEN
+          - name: BAKING_MONITOR_TWILIO_AUTH_TOKEN
             valueFrom:
               secretKeyRef:
                 name: secret-config
                 key: twilio-auth-token
-          - name: BAKING_MONITOR_FROM
+          - name: BAKING_MONITOR_TWILIO_FROM
             valueFrom:
               secretKeyRef:
                 name: secret-config
                 key: twilio-from
-          - name: BAKING_MONITOR_TO
+          - name: BAKING_MONITOR_TWILIO_TO
             valueFrom:
               secretKeyRef:
                 name: secret-config

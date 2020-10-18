@@ -6,6 +6,7 @@ import (
 
 	"github.com/goat-systems/baking-monitor/internal/notifier/twilio"
 	"github.com/goat-systems/go-tezos/v3/rpc"
+	"github.com/google/uuid"
 	"github.com/sirupsen/logrus"
 )
 
@@ -52,6 +53,7 @@ func (w *Watcher) Start() {
 					logrus.WithFields(logrus.Fields{"error": err.Error(), "cycle": head.Metadata.Level.Cycle}).Error("failed to get baking rights")
 					break
 				}
+				logrus.WithFields(logrus.Fields{"rights": fmt.Sprintf("%+v", br), "cycle": head.Metadata.Level.Cycle}).Info("Received baking rights for cycle.")
 				doneBr = make(chan struct{})
 				w.watchBakingRights(br, doneBr)
 
@@ -64,6 +66,7 @@ func (w *Watcher) Start() {
 					logrus.WithFields(logrus.Fields{"error": err.Error(), "cycle": head.Metadata.Level.Cycle}).Error("failed to get endorsing rights")
 					break
 				}
+				logrus.WithFields(logrus.Fields{"rights": fmt.Sprintf("%+v", er), "cycle": head.Metadata.Level.Cycle}).Info("Received endorsement rights for cycle.")
 				doneEr = make(chan struct{})
 				w.watchEndorsements(er, doneEr)
 
@@ -74,41 +77,52 @@ func (w *Watcher) Start() {
 }
 
 func (w *Watcher) watchBakingRights(br *rpc.BakingRights, done chan struct{}) {
+	uuid := uuid.New()
+	logrus.WithField("uuid", uuid.String()).Info("Starting new baking rights worker.")
 	t := time.NewTicker(time.Minute)
 	for {
 		select {
 		case <-t.C:
 			head, err := w.r.Head()
 			if err != nil {
-				logrus.WithField("error", err.Error()).Error("failed to get current block height")
+				logrus.WithFields(logrus.Fields{"uuid": uuid.String(), "error": err.Error()}).Error("Failed to get current block height.")
 			}
+			logrus.WithFields(logrus.Fields{"uuid": uuid.String(), "block": head.Header.Level}).Info("Baking rights worker found new block.")
+
 			for _, r := range *br {
 				if r.Level == head.Header.Level && r.Priority == 0 {
+					logrus.WithFields(logrus.Fields{"uuid": uuid.String(), "block": head.Header.Level}).Info("Baking rights worker found baking slot for priority 0.")
 					if head.Metadata.Baker != w.delegate {
-						logrus.WithField("level", head.Header.Level).Info("Missed Baking Opportunity")
-						w.notifier.Send(fmt.Sprintf("Missed Baking Opportunity at level '%d'", head.Header.Level))
+						logrus.WithFields(logrus.Fields{"uuid": uuid.String(), "block": head.Header.Level}).Error("Missed Baking Opportunity.")
+						w.notifier.Send(fmt.Sprintf("Missed Baking Opportunity at level '%d'.", head.Header.Level))
 					} else {
-						logrus.WithField("level", head.Header.Level).Info("Successfully Baked Block")
+						logrus.WithFields(logrus.Fields{"uuid": uuid.String(), "block": head.Header.Level}).Info("Successfully Baked Block.")
 					}
 				}
 			}
 		case <-done:
+			logrus.WithField("uuid", uuid.String()).Info("Ending baking rights worker.")
 			break
 		}
 	}
 }
 
 func (w *Watcher) watchEndorsements(er *rpc.EndorsingRights, done chan struct{}) {
+	uuid := uuid.New()
+	logrus.WithField("uuid", uuid.String()).Info("Starting new endorsement rights worker.")
 	t := time.NewTicker(time.Minute)
 	for {
 		select {
 		case <-t.C:
 			head, err := w.r.Head()
 			if err != nil {
-				logrus.WithField("error", err.Error()).Error("failed to get current block height")
+				logrus.WithFields(logrus.Fields{"uuid": uuid.String(), "error": err.Error()}).Error("Failed to get current block height.")
 			}
+			logrus.WithFields(logrus.Fields{"uuid": uuid.String(), "block": head.Header.Level}).Info("Endorsing rights worker found new block.")
+
 			for _, r := range *er {
 				if r.Level == head.Header.Level-1 {
+					logrus.WithFields(logrus.Fields{"uuid": uuid.String(), "right-level": r.Level, "block": head.Header.Level}).Info("Endorsing rights worker found endorsing slot.")
 					var found bool
 					for _, operations := range head.Operations {
 						for _, operation := range operations {
@@ -121,10 +135,10 @@ func (w *Watcher) watchEndorsements(er *rpc.EndorsingRights, done chan struct{})
 						}
 					}
 					if !found {
+						logrus.WithFields(logrus.Fields{"uuid": uuid.String(), "right-level": r.Level, "block": head.Header.Level}).Error("Missed Endorsing Opportunity.")
 						w.notifier.Send(fmt.Sprintf("Missed Endorsement Opportunity at level '%d'", r.Level))
-						logrus.WithField("level", r.Level).Info("Missed Endorsement Opportunity")
 					} else {
-						logrus.WithField("level", r.Level).Info("Successfully Endorsed Block")
+						logrus.WithFields(logrus.Fields{"uuid": uuid.String(), "right-level": r.Level, "block": head.Header.Level}).Info("Successfully Endorsed Block.")
 					}
 				}
 			}
