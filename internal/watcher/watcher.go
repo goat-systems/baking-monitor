@@ -47,7 +47,7 @@ func (w *Watcher) Start() {
 					BlockHash:   head.Hash,
 					Cycle:       head.Metadata.Level.Cycle,
 					Delegate:    w.delegate,
-					MaxPriority: 1,
+					MaxPriority: 0,
 				})
 				if err != nil {
 					logrus.WithFields(logrus.Fields{"error": err.Error(), "cycle": head.Metadata.Level.Cycle}).Error("failed to get baking rights")
@@ -80,70 +80,75 @@ func (w *Watcher) watchBakingRights(br *rpc.BakingRights, done chan struct{}) {
 	uuid := uuid.New()
 	logrus.WithField("uuid", uuid.String()).Info("Starting new baking rights worker.")
 	t := time.NewTicker(time.Minute)
-	for {
-		select {
-		case <-t.C:
-			head, err := w.r.Head()
-			if err != nil {
-				logrus.WithFields(logrus.Fields{"uuid": uuid.String(), "error": err.Error()}).Error("Failed to get current block height.")
-			}
-			logrus.WithFields(logrus.Fields{"uuid": uuid.String(), "block": head.Header.Level}).Info("Baking rights worker found new block.")
+	go func() {
+		for {
+			select {
+			case <-t.C:
+				head, err := w.r.Head()
+				if err != nil {
+					logrus.WithFields(logrus.Fields{"uuid": uuid.String(), "error": err.Error()}).Error("Failed to get current block height.")
+				}
+				logrus.WithFields(logrus.Fields{"uuid": uuid.String(), "block": head.Header.Level}).Info("Baking rights worker found new block.")
 
-			for _, r := range *br {
-				if r.Level == head.Header.Level && r.Priority == 0 {
-					logrus.WithFields(logrus.Fields{"uuid": uuid.String(), "block": head.Header.Level}).Info("Baking rights worker found baking slot for priority 0.")
-					if head.Metadata.Baker != w.delegate {
-						logrus.WithFields(logrus.Fields{"uuid": uuid.String(), "block": head.Header.Level}).Error("Missed Baking Opportunity.")
-						w.notifier.Send(fmt.Sprintf("Missed Baking Opportunity at level '%d'.", head.Header.Level))
-					} else {
-						logrus.WithFields(logrus.Fields{"uuid": uuid.String(), "block": head.Header.Level}).Info("Successfully Baked Block.")
+				for _, r := range *br {
+					if r.Level == head.Header.Level && r.Priority == 0 {
+						logrus.WithFields(logrus.Fields{"uuid": uuid.String(), "block": head.Header.Level}).Info("Baking rights worker found baking slot for priority 0.")
+						if head.Metadata.Baker != w.delegate {
+							logrus.WithFields(logrus.Fields{"uuid": uuid.String(), "block": head.Header.Level}).Error("Missed Baking Opportunity.")
+							w.notifier.Send(fmt.Sprintf("Missed Baking Opportunity at level '%d'.", head.Header.Level))
+						} else {
+							logrus.WithFields(logrus.Fields{"uuid": uuid.String(), "block": head.Header.Level}).Info("Successfully Baked Block.")
+						}
 					}
 				}
+			case <-done:
+				logrus.WithField("uuid", uuid.String()).Info("Ending baking rights worker.")
+				break
 			}
-		case <-done:
-			logrus.WithField("uuid", uuid.String()).Info("Ending baking rights worker.")
-			break
 		}
-	}
+	}()
 }
 
 func (w *Watcher) watchEndorsements(er *rpc.EndorsingRights, done chan struct{}) {
 	uuid := uuid.New()
 	logrus.WithField("uuid", uuid.String()).Info("Starting new endorsement rights worker.")
 	t := time.NewTicker(time.Minute)
-	for {
-		select {
-		case <-t.C:
-			head, err := w.r.Head()
-			if err != nil {
-				logrus.WithFields(logrus.Fields{"uuid": uuid.String(), "error": err.Error()}).Error("Failed to get current block height.")
-			}
-			logrus.WithFields(logrus.Fields{"uuid": uuid.String(), "block": head.Header.Level}).Info("Endorsing rights worker found new block.")
 
-			for _, r := range *er {
-				if r.Level == head.Header.Level-1 {
-					logrus.WithFields(logrus.Fields{"uuid": uuid.String(), "right-level": r.Level, "block": head.Header.Level}).Info("Endorsing rights worker found endorsing slot.")
-					var found bool
-					for _, operations := range head.Operations {
-						for _, operation := range operations {
-							contents := operation.Contents.Organize()
-							for _, endorsement := range contents.Endorsements {
-								if endorsement.Metadata.Delegate == w.delegate {
-									found = true
+	go func() {
+		for {
+			select {
+			case <-t.C:
+				head, err := w.r.Head()
+				if err != nil {
+					logrus.WithFields(logrus.Fields{"uuid": uuid.String(), "error": err.Error()}).Error("Failed to get current block height.")
+				}
+				logrus.WithFields(logrus.Fields{"uuid": uuid.String(), "block": head.Header.Level}).Info("Endorsing rights worker found new block.")
+
+				for _, r := range *er {
+					if r.Level == head.Header.Level-1 {
+						logrus.WithFields(logrus.Fields{"uuid": uuid.String(), "right-level": r.Level, "block": head.Header.Level}).Info("Endorsing rights worker found endorsing slot.")
+						var found bool
+						for _, operations := range head.Operations {
+							for _, operation := range operations {
+								contents := operation.Contents.Organize()
+								for _, endorsement := range contents.Endorsements {
+									if endorsement.Metadata.Delegate == w.delegate {
+										found = true
+									}
 								}
 							}
 						}
-					}
-					if !found {
-						logrus.WithFields(logrus.Fields{"uuid": uuid.String(), "right-level": r.Level, "block": head.Header.Level}).Error("Missed Endorsing Opportunity.")
-						w.notifier.Send(fmt.Sprintf("Missed Endorsement Opportunity at level '%d'", r.Level))
-					} else {
-						logrus.WithFields(logrus.Fields{"uuid": uuid.String(), "right-level": r.Level, "block": head.Header.Level}).Info("Successfully Endorsed Block.")
+						if !found {
+							logrus.WithFields(logrus.Fields{"uuid": uuid.String(), "right-level": r.Level, "block": head.Header.Level}).Error("Missed Endorsing Opportunity.")
+							w.notifier.Send(fmt.Sprintf("Missed Endorsement Opportunity at level '%d'", r.Level))
+						} else {
+							logrus.WithFields(logrus.Fields{"uuid": uuid.String(), "right-level": r.Level, "block": head.Header.Level}).Info("Successfully Endorsed Block.")
+						}
 					}
 				}
+			case <-done:
+				break
 			}
-		case <-done:
-			break
 		}
-	}
+	}()
 }

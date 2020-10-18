@@ -15,7 +15,7 @@ spec:
       containers:
       - name: baking-monitor
         imagePullPolicy: Always
-        image: goatsystems/baking-monitor:v1.0.0
+        image: goatsystems/baking-monitor:v1.0.2
         command:
             - "baking-monitor"
         resources:
