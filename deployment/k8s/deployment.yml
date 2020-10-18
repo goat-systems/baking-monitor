@@ -1,0 +1,49 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: baking-monitor
+  namespace: baking-monitor
+spec:
+  selector:
+    matchLabels:
+      app: baking-monitor
+  template:
+    metadata:
+      labels:
+        app: baking-monitor
+    spec:
+      containers:
+      - name: baking-monitor
+        imagePullPolicy: Always
+        image: goatsystems/baking-monitor:v1.0.0
+        command:
+            - "baking-monitor"
+        resources:
+          limits:
+            memory: "1000Mi"
+            cpu: "500m"
+        env:
+          - name: BAKING_MONITOR_BAKER
+            value: "tz1SUgyRB8T5jXgXAwS33pgRHAKrafyg87Yc"
+          - name: BAKING_MONITOR_TEZOS_API
+            value: "https://mainnet-tezos.giganode.io"
+          - name: BAKING_MONITOR_ACCOUNT_SID
+            valueFrom:
+              secretKeyRef:
+                name: secret-config
+                key: twilio-account-sid
+          - name: BAKING_MONITOR_AUTH_TOKEN
+            valueFrom:
+              secretKeyRef:
+                name: secret-config
+                key: twilio-auth-token
+          - name: BAKING_MONITOR_FROM
+            valueFrom:
+              secretKeyRef:
+                name: secret-config
+                key: twilio-from
+          - name: BAKING_MONITOR_TO
+            valueFrom:
+              secretKeyRef:
+                name: secret-config
+                key: twilio-to

@@ -1,0 +1,42 @@
+# github.com/btcsuite/btcutil v1.0.2
+github.com/btcsuite/btcutil/base58
+# github.com/caarlos0/env/v6 v6.4.0
+## explicit
+github.com/caarlos0/env/v6
+# github.com/dgrijalva/jwt-go v3.2.0+incompatible
+github.com/dgrijalva/jwt-go
+# github.com/go-playground/locales v0.13.0
+github.com/go-playground/locales
+github.com/go-playground/locales/currency
+# github.com/go-playground/universal-translator v0.17.0
+github.com/go-playground/universal-translator
+# github.com/go-playground/validator v9.31.0+incompatible
+## explicit
+github.com/go-playground/validator
+# github.com/go-playground/validator/v10 v10.2.0
+github.com/go-playground/validator/v10
+# github.com/goat-systems/go-tezos/v3 v3.0.0
+## explicit
+github.com/goat-systems/go-tezos/v3/internal/crypto
+github.com/goat-systems/go-tezos/v3/rpc
+# github.com/google/go-querystring v1.0.0
+github.com/google/go-querystring/query
+# github.com/gorilla/schema v1.1.0
+github.com/gorilla/schema
+# github.com/leodido/go-urn v1.2.0
+github.com/leodido/go-urn
+# github.com/pkg/errors v0.9.1
+## explicit
+github.com/pkg/errors
+# github.com/sfreiberg/gotwilio v0.0.0-20200916182813-169c4cd5c691
+## explicit
+github.com/sfreiberg/gotwilio
+# github.com/sirupsen/logrus v1.7.0
+## explicit
+github.com/sirupsen/logrus
+# golang.org/x/crypto v0.0.0-20200820211705-5c72a883971a
+golang.org/x/crypto/blake2b
+# golang.org/x/sys v0.0.0-20191026070338-33540a1f6037
+golang.org/x/sys/cpu
+golang.org/x/sys/unix
+golang.org/x/sys/windows
